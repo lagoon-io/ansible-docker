@@ -1,33 +1,39 @@
-FROM debian:jessie
+FROM centos:7
+LABEL maintainer="Kento75"
 
-LABEL maintainer="kento2github@gmail.com"
 
+# Install systemd -- See https://hub.docker.com/_/centos/
+RUN yum -y update; yum clean all; \
+  (cd /lib/systemd/system/sysinit.target.wants/; for i in *; do [ $i == systemd-tmpfiles-setup.service ] || rm -f $i; done); \
+  rm -f /lib/systemd/system/multi-user.target.wants/*;\
+  rm -f /etc/systemd/system/*.wants/*;\
+  rm -f /lib/systemd/system/local-fs.target.wants/*; \
+  rm -f /lib/systemd/system/sockets.target.wants/*udev*; \
+  rm -f /lib/systemd/system/sockets.target.wants/*initctl*; \
+  rm -f /lib/systemd/system/basic.target.wants/*;\
+  rm -f /lib/systemd/system/anaconda.target.wants/*;
 
-RUN echo ">>> apt-get install other modules"  && \
-  apt-get update -y  &&  apt-get install --fix-missing      && \
-  DEBIAN_FRONTEND=noninteractive         \
-  apt-get install -y                     \
-  python python-yaml sudo            \
-  curl gcc python-pip python-dev libffi-dev libssl-dev  && \
-  apt-get install -y sshpass openssh-client  && \
-  apt-get -y --purge remove python-cffi
+# Install requirements modules.
+RUN yum makecache fast \
+  && yum -y install deltarpm epel-release initscripts \
+  && yum -y update \
+  && yum -y install \
+  sudo \
+  which \
+  vim \
+  ifconfig \
+  python-pip \
+  && yum clean all
 
-RUN echo ">>> pip install other modules"   && \
-  pip install --upgrade setuptools         && \
-  pip install --upgrade pycrypto           && \
-  pip install --upgrade cffi pywinrm       && \
-  echo ">>> Fix strange bug under Jessie: cannot import name IncompleteRead"  && \
-  easy_install -U pip    && \
-  pip install ansible
+# Install Ansible modules.
+RUN pip install ansible
 
-RUN echo ">>> Removing unused APT resources..."    && \
-  apt-get -f -y --auto-remove remove \
-  gcc python-pip python-dev libffi-dev libssl-dev  && \
-  apt-get clean                                    && \
-  rm -rf /var/lib/apt/lists/*  /tmp/*
+# Disable requiretty.
+RUN sed -i -e 's/^\(Defaults\s*requiretty\)/#--- \1/'  /etc/sudoers
 
-RUN echo ">>> Adding hosts for convenience..."     && \
-  mkdir -p /etc/ansible                            && \
-  echo 'localhost' > /etc/ansible/hosts
+# Install Ansible inventory file.
+RUN mkdir -p /etc/ansible
+RUN echo -e '[local]\nlocalhost ansible_connection=local' > /etc/ansible/hosts
 
-CMD ["ansible-playbook", "--version"]
+VOLUME ["/sys/fs/cgroup"]
+CMD ["/usr/lib/systemd/systemd"]

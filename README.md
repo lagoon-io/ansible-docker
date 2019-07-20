@@ -1,10 +1,23 @@
 # ansible-docker
 
-OS： Debian 8.11  
-モジュール： Ansible
+OS： CentOS 7  
+モジュール： Ansible latest
 
 ## セットアップコマンド
 
 ```
-$ docker build .
+# イメージ作成
+$ docker build -t ansible-docker:latest ./
+
+# コンテナ作成 & ログイン
+$ docker run --name ansible-container -it ansible-docker bash
+
+# 起動中のコンテナにログイン
+$ docker exec -it ansible-container bash
+
+# コンテナの起動
+$ docker start ansible-container
+
+# コンテナの停止
+$ docker stop ansible-container
 ```
