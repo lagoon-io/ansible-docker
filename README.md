@@ -1,5 +1,7 @@
 # ansible-docker
 
+[![nodesource/node](http://dockeri.co/image/kento75/ansible-docker)](https://hub.docker.com/r/kento75/ansible-docker/)
+
 OS： CentOS 7  
 モジュール： Ansible latest
 
